@@ -1,0 +1,8 @@
+target/
+project/project/
+project/target/
+.metals/
+.bloop/
+.save.log
+.DS_Store
+.idea/
