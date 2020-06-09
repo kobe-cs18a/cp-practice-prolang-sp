@@ -1,3 +1,5 @@
+package cp1
+
 import scala.util.parsing.combinator._
 
 abstract class SugarCspExpression
@@ -61,6 +63,8 @@ case class SLt(t1: SugarCspTerm, t2: SugarCspTerm) extends SugarCspConstraint
 case class SGe(t1: SugarCspTerm, t2: SugarCspTerm) extends SugarCspConstraint
 
 case class SGt(t1: SugarCspTerm, t2: SugarCspTerm) extends SugarCspConstraint
+
+case class SAlldifferent(ts: Seq[SugarCspTerm]) extends SugarCspConstraint
 
 class SugarCspLangParser extends JavaTokenParsers {
   var str2IntVar: Map[String, SIntVar] = Map.empty
@@ -137,15 +141,15 @@ class SugarCspLangParser extends JavaTokenParsers {
    * ============================================================
    */
   /**
-    * Integer ::= Digit+ | -Digit+
-    * Digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-    */
+   * Integer ::= Digit+ | -Digit+
+   * Digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+   */
   def Integer = wholeNumber ^^ { t => t.toInt }
 
   /**
-    * Symbol ::= SymbolCharacter+  /* except sequences interpreted as integers */
-    * SymbolCharacter ::= /* any character from A-Z a-z 0-9 _ . + - * / % = < > ! & | and \u00080-\u10FFFF */
-    */
+   * Symbol ::= SymbolCharacter+  /* except sequences interpreted as integers */
+   * SymbolCharacter ::= /* any character from A-Z a-z 0-9 _ . + - * / % = < > ! & | and \u00080-\u10FFFF */
+   */
   def Symbol =
     """[A-Za-z_][-\u00080-\u10FFFF\+\*\/\%\=\<\>\!\&a-zA-Z0-9_\[\]]*""".r
 
@@ -153,17 +157,17 @@ class SugarCspLangParser extends JavaTokenParsers {
     """nil""".r
 
   /**
-    * Comment ::=
-    * ; /* followed by characters until the end of line */
-    */
+   * Comment ::=
+   * ; /* followed by characters until the end of line */
+   */
   // TODO
 
   /**
-    * DomainDefinition ::=
-    * (domain DomainName LowerBound UpperBound) |
-    * (domain DomainName (Range+)) |
-    * (domain DomainName Value)
-    */
+   * DomainDefinition ::=
+   * (domain DomainName LowerBound UpperBound) |
+   * (domain DomainName (Range+)) |
+   * (domain DomainName Value)
+   */
   def DomainDefinition =
     ("(domain" ~> DomainName) ~ LowerBound ~ (UpperBound <~ ")") ^^ {
       case name ~ lb ~ ub => str2Domain += name -> buildDomain(lb, ub)
@@ -180,14 +184,14 @@ class SugarCspLangParser extends JavaTokenParsers {
       }
 
   /**
-    * DomainName ::= Symbol
-    */
+   * DomainName ::= Symbol
+   */
   def DomainName = Symbol
 
   /**
-    * LowerBound ::= Integer
-    * UpperBound ::= Integer
-    */
+   * LowerBound ::= Integer
+   * UpperBound ::= Integer
+   */
   def LowerBound: Parser[Int] = Integer
 
   def UpperBound: Parser[Int] = Integer
@@ -196,8 +200,8 @@ class SugarCspLangParser extends JavaTokenParsers {
   def Value: Parser[Int] = Integer
 
   /**
-    * Range ::= Integer | (Integer Integer)
-    */
+   * Range ::= Integer | (Integer Integer)
+   */
   def RangeDom: Parser[Tuple2[Int, Int]] =
     Integer ^^ { t => (t, t) } |
       ("(" ~> Integer) ~ (Integer <~ ")") ^^ {
@@ -211,12 +215,12 @@ class SugarCspLangParser extends JavaTokenParsers {
    * ============================================================
    */
   /**
-    * IntegerVariableDefinition ::=
-    * (int IntegerVariableName DomainName) |
-    * (int IntegerVariableName LowerBound UpperBound) |
-    * (int IntegerVariableName (Range+)) |
-    * (int IntegerVariableName Value)
-    */
+   * IntegerVariableDefinition ::=
+   * (int IntegerVariableName DomainName) |
+   * (int IntegerVariableName LowerBound UpperBound) |
+   * (int IntegerVariableName (Range+)) |
+   * (int IntegerVariableName Value)
+   */
   def IntegerVariableDefinition =
     "(int" ~> IntegerVariableName ~ DomainName <~ ")" ^^ {
       case intname ~ domname => str2IntVar += intname -> buildIntegerVariable(intname, domname)
@@ -232,9 +236,9 @@ class SugarCspLangParser extends JavaTokenParsers {
       }
 
   /**
-    * IntegerVariableName ::=
-    * Symbol
-    */
+   * IntegerVariableName ::=
+   * Symbol
+   */
   def IntegerVariableName = Symbol
 
   /*
@@ -243,9 +247,9 @@ class SugarCspLangParser extends JavaTokenParsers {
    * ============================================================
    */
   /**
-    * BooleanVariableDefinition ::=
-    * (bool BooleanVariableName)
-    */
+   * BooleanVariableDefinition ::=
+   * (bool BooleanVariableName)
+   */
   def BooleanVariableDefinition =
     "(" ~> ("bool" ~> BooleanVariableName) <~ ")" ^^ {
       case boolname => str2BoolVar += boolname -> buildBooleanVariable(boolname)
@@ -253,9 +257,9 @@ class SugarCspLangParser extends JavaTokenParsers {
     }
 
   /**
-    * BooleanVariableName ::=
-    * Symbol
-    */
+   * BooleanVariableName ::=
+   * Symbol
+   */
   def BooleanVariableName = Symbol
 
   /*
@@ -265,21 +269,21 @@ class SugarCspLangParser extends JavaTokenParsers {
  */
 
   /**
-    * Term ::=
-    * Integer |
-    * IntegerVariableName |
-    * (abs Term) |
-    * (neg Term)       | (- Term) |
-    * (add Term*)      | (+ Term*) |
-    * (sub Term Term+) | (- Term Term+) |
-    * (mul Term Term)  | (* Term Term) |
-    * (div Term Term)  | (/ Term Term) |
-    * (mod Term Term)  | (% Term Term) |
-    * (pow Term Term)  |
-    * (min Term Term)  |
-    * (max Term Term)  |
-    * (if LogicalFormula Term Term)
-    */
+   * Term ::=
+   * Integer |
+   * IntegerVariableName |
+   * (abs Term) |
+   * (neg Term)       | (- Term) |
+   * (add Term*)      | (+ Term*) |
+   * (sub Term Term+) | (- Term Term+) |
+   * (mul Term Term)  | (* Term Term) |
+   * (div Term Term)  | (/ Term Term) |
+   * (mod Term Term)  | (% Term Term) |
+   * (pow Term Term)  |
+   * (min Term Term)  |
+   * (max Term Term)  |
+   * (if LogicalFormula Term Term)
+   */
   def SugarTerm: Parser[SugarCspTerm] =
     Integer ^^ {
       case integer => SNum(integer)
@@ -347,23 +351,23 @@ class SugarCspLangParser extends JavaTokenParsers {
    * ============================================================
    */
   /**
-    * Constraint ::=
-    * LogicalFormula
-    */
+   * Constraint ::=
+   * LogicalFormula
+   */
   def Constraint: Parser[SugarCspConstraint] = LogicalFormula ^^ {
     case c => buildConstraint(c: SugarCspConstraint)
   }
 
   /**
-    * LogicalFormula ::=
-    * AtomicFormula |
-    * (not LogicalFormula) | (! LogicalFormula) |
-    * (and LogicalFormula*) | (&& LogicalFormula*) |
-    * (or LogicalFormula*) | (|| LogicalFormula*) |
-    * (imp LogicalFormula LogicalFormula) | (=> LogicalFormula LogicalFormula) |
-    * (xor LogicalFormula LogicalFormula) |
-    * (iff LogicalFormula LogicalFormula)
-    */
+   * LogicalFormula ::=
+   * AtomicFormula |
+   * (not LogicalFormula) | (! LogicalFormula) |
+   * (and LogicalFormula*) | (&& LogicalFormula*) |
+   * (or LogicalFormula*) | (|| LogicalFormula*) |
+   * (imp LogicalFormula LogicalFormula) | (=> LogicalFormula LogicalFormula) |
+   * (xor LogicalFormula LogicalFormula) |
+   * (iff LogicalFormula LogicalFormula)
+   */
   def LogicalFormula: Parser[SugarCspConstraint] =
     AtomicFormula |
       "(" ~> ("not" ~ LogicalFormula) <~ ")" ^^ { case op ~ ctr => SNot(ctr) } |
@@ -378,28 +382,28 @@ class SugarCspLangParser extends JavaTokenParsers {
       "(" ~> ("iff" ~ LogicalFormula ~ LogicalFormula) <~ ")" ^^ { case op ~ ctr1 ~ ctr2 => SIff(ctr1, ctr2) }
 
   /**
-    * AtomicFormula ::=
-    * false | true | BooleanVariableName |
-    * (eq Term Term) | (= Term Term) |
-    * (ne Term Term) | (!= Term Term) |
-    * (le Term Term) | (<= Term Term) |
-    * (lt Term Term) | (< Term Term) |
-    * (ge Term Term) | (>= Term Term) |
-    * (gt Term Term) | (> Term Term) |
-    * (RelationName Term*) |
-    * (PredicateName Term*) |
-    * AllDifferentConstraint |
-    * WeightedSumConstraint |
-    * CumulativeConstraint |
-    * ElementConstraint |
-    * DisjunctiveConstraint |
-    * Lex_lessConstraint |
-    * Lex_lesseqConstraint |
-    * NvalueConstraint |
-    * Global_cardinalityConstraint |
-    * Global_cardinality_with_costsConstraint |
-    * CountConstraint
-    */
+   * AtomicFormula ::=
+   * false | true | BooleanVariableName |
+   * (eq Term Term) | (= Term Term) |
+   * (ne Term Term) | (!= Term Term) |
+   * (le Term Term) | (<= Term Term) |
+   * (lt Term Term) | (< Term Term) |
+   * (ge Term Term) | (>= Term Term) |
+   * (gt Term Term) | (> Term Term) |
+   * (RelationName Term*) |
+   * (PredicateName Term*) |
+   * AllDifferentConstraint |
+   * WeightedSumConstraint |
+   * CumulativeConstraint |
+   * ElementConstraint |
+   * DisjunctiveConstraint |
+   * Lex_lessConstraint |
+   * Lex_lesseqConstraint |
+   * NvalueConstraint |
+   * Global_cardinalityConstraint |
+   * Global_cardinality_with_costsConstraint |
+   * CountConstraint
+   */
   def AtomicFormula: Parser[SugarCspConstraint] =
     "false" ^^ {
       case _ => SFALSE
@@ -421,7 +425,11 @@ class SugarCspLangParser extends JavaTokenParsers {
       "(" ~> ("ge" ~ SugarTerm ~ SugarTerm) <~ ")" ^^ { case op ~ term1 ~ term2 => SGe(term1, term2) } |
       "(" ~> (">=" ~ SugarTerm ~ SugarTerm) <~ ")" ^^ { case op ~ term1 ~ term2 => SGe(term1, term2) } |
       "(" ~> ("gt" ~ SugarTerm ~ SugarTerm) <~ ")" ^^ { case op ~ term1 ~ term2 => SGt(term1, term2) } |
-      "(" ~> (">" ~ SugarTerm ~ SugarTerm) <~ ")" ^^ { case op ~ term1 ~ term2 => SGt(term1, term2) }
+      "(" ~> (">" ~ SugarTerm ~ SugarTerm) <~ ")" ^^ { case op ~ term1 ~ term2 => SGt(term1, term2) } |
+      AllDifferentConstraint
+
+  def AllDifferentConstraint: Parser[SugarCspConstraint] =
+    "" ^^ {???} |
+      "" ^^ {???}
 
 }
-
