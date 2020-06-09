@@ -1,0 +1,6 @@
+(int x1 1 3)
+(int x2 1 3)
+(int x3 1 3)
+(ne x1 x2)
+(ne x1 x3)
+(ne x2 x3)
