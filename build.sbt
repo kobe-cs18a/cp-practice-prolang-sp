@@ -4,7 +4,7 @@ name := s"prolang-sp-$id"
 
 version := "1.2.8"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.13.5"
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.0"
 
