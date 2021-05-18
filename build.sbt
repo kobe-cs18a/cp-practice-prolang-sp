@@ -1,4 +1,4 @@
-val id = "123x456x" // 学籍番号を入れて下さい
+val id = "987x654x" // 学籍番号を入れて下さい
 
 name := s"prolang-sp-$id"
 
@@ -6,7 +6,8 @@ version := "1.2.8"
 
 scalaVersion := "2.13.5"
 
-libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.0"
+// libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.0"
+libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.0.0"
 
 unmanagedResourceDirectories in Compile += baseDirectory.value / "docs"
 unmanagedResourceDirectories in Compile += baseDirectory.value / "CspFiles"
